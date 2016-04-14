@@ -1,29 +1,26 @@
 from random import choice
+import sys
 
-
-def open_and_read_file(file_path):
+def open_and_read_file(filenames):
     """Takes file path as string; returns text as string.
-
     Takes a string that is a file path, opens the file, and turns
     the file's contents as one string of text.
     """
 
-    text = open(file_path).read()
-
+    text = ''
+    for file in filenames:
+        text = text + open(file).read()
     return text
 
     # return "This should be a variable that contains your file text as one long string"
 
 
-def make_chains(text_string):
+def make_chains(text_string, n=2):
     """Takes input text as string; returns _dictionary_ of markov chains.
-
     A chain will be a key that consists of a tuple of (word1, word2)
     and the value would be a list of the word(s) that follow those two
     words in the input text.
-
     For example:
-
         >>> make_chains("hi there mary hi there juanita")
         {('hi', 'there'): ['mary', 'juanita'], ('there', 'mary'): ['hi'], ('mary', 'hi': ['there']}
     """
@@ -32,26 +29,12 @@ def make_chains(text_string):
     
     chains = {}
 
-    for i in range(len(text) - 2):
-        word_pair = (text[i], text[i + 1])
-        chains[word_pair] = chains.get(word_pair, []) + [text[i + 2]]
-
-
-        # word_pair = (text[i], text[i + 1])
-        # value = chains.get(word_pair, [])
-        # value.append(text[i + 2])
-        # chains[word_pair] = value
-
-
-        # if value == []:
-        #     print ("found an empty value for tuple", word_tuple)
-        #     chains[word_tuple] = [add_value]
-        # else:
-        #     print ("found a non-empty value for tuple", word_tuple, ":", value)            
-        #     new_value = chains[word_tuple].append(add_value)
-        #     print ("adding value", new_value, "for key", word_tuple)            
-        #     chains[word_tuple] = new_value
-            
+    for i in range(len(text) - n):
+        words = []
+        for j in range(n):
+            words.append(text[i + j])
+        words = tuple(words)
+        chains[words] = chains.get(words, []) + [text[i + n]]
 
     return chains
 
@@ -61,30 +44,45 @@ def make_text(chains):
 
     
     current_key = choice(chains.keys())
-    text = " ".join(current_key)
     
-    while True:
+    while current_key[0][0].istitle() == False:
+        current_key = choice(chains.keys())
+
+    text = " ".join(current_key)
+
+    punctuation = ['.', '?', '!']
+
+    while text[-1] not in punctuation and len(text) < 140:
         if current_key in chains:
             string = choice(chains[current_key])
             text = "{} {}".format(text, string)
-            current_key = (current_key[1], string)
+            current_key = list(current_key[1:])
+            current_key.append(string)
+            current_key = tuple(current_key)
+    
+    if len(text) < 140:
+        return text
+    else:
+        make_text(chains)
 
-        else:
-            return text
+def check_text(new_text, original_string):
+    """Checks to see if the returned phrase is taken from one source only"""
+
+    if new_text == None:
+        return 1
+
+    if new_text in original_string.replace('\n', " "):
+        return 1
+    else:
+        return 2
 
 
-        # if current_key not in chains:
-        #     return text
-
-        # string = choice(chains[current_key])
-        # text = "{} {}".format(text, string)
-        # current_key = (current_key[1], string)
-      
-
-input_path = "gettysburg.txt"
+input_paths = sys.argv[1:]
+#input_path_2 = sys.argv[2]
+#n = int(sys.argv[2])
 
 # Open the file and turn it into one long string
-input_text = open_and_read_file(input_path)
+input_text = open_and_read_file(input_paths)
 
 # Get a Markov chain
 chains = make_chains(input_text)
@@ -92,4 +90,11 @@ chains = make_chains(input_text)
 # Produce random text
 random_text = make_text(chains)
 
-print random_text
+check = check_text(random_text, input_text)
+
+while True:
+    if check_text(random_text, input_text) == 1:
+        random_text = make_text(chains)
+    else:
+        print random_text
+        break
