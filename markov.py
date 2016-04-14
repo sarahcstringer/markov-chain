@@ -1,5 +1,7 @@
 from random import choice
 import sys
+import twitter
+import os
 
 def open_and_read_file(filenames):
     """Takes file path as string; returns text as string.
@@ -76,6 +78,16 @@ def check_text(new_text, original_string):
     else:
         return 2
 
+def tweet(text):
+
+    api = twitter.Api(
+        consumer_key=os.environ['TWITTER_CONSUMER_KEY'],
+        consumer_secret=os.environ['TWITTER_CONSUMER_SECRET'],
+        access_token_key=os.environ['TWITTER_ACCESS_TOKEN_KEY'],
+        access_token_secret=os.environ['TWITTER_ACCESS_TOKEN_SECRET'])
+
+    status = api.PostUpdate(text)
+    print status.text
 
 input_paths = sys.argv[1:]
 #input_path_2 = sys.argv[2]
@@ -98,3 +110,6 @@ while True:
     else:
         print random_text
         break
+
+#tweet(random_text)
+
